@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能作业批改系统</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__logo" aria-hidden="true">✎</span>
+        <div>
+          <h1 class="header__title">智能作业批改系统</h1>
+          <p class="header__subtitle">拍摄作业 · 自动切题 · 智能批改</p>
+        </div>
+      </div>
+      <div class="header__status" id="apiStatus" title="后端连接状态">
+        <span class="status-dot"></span>
+        <span class="status-text">检测中…</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- 左侧：采集与操作 -->
+      <section class="panel panel--capture" aria-labelledby="capture-heading">
+        <h2 id="capture-heading" class="panel__title">作业采集</h2>
+
+        <div class="capture-tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="upload" role="tab" aria-selected="true">本地上传</button>
+          <button type="button" class="tab" data-tab="camera" role="tab" aria-selected="false">摄像头拍摄</button>
+        </div>
+
+        <!-- 上传区 -->
+        <div class="tab-panel active" id="panel-upload" role="tabpanel">
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <div class="upload-zone__inner">
+              <span class="upload-zone__icon" aria-hidden="true">📷</span>
+              <p class="upload-zone__text">拖拽图片到此处，或点击选择</p>
+              <p class="upload-zone__hint">支持 JPG、PNG，建议光线充足、画面清晰</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 摄像头 -->
+        <div class="tab-panel" id="panel-camera" role="tabpanel" hidden>
+          <div class="camera-wrap">
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <canvas id="cameraCanvas" hidden></canvas>
+            <p class="camera-hint" id="cameraHint">正在请求摄像头权限…</p>
+          </div>
+          <button type="button" class="btn btn--secondary btn--block" id="btnCapture">拍摄</button>
+        </div>
+
+        <!-- 预览 -->
+        <div class="preview" id="previewArea" hidden>
+          <img id="previewImage" alt="作业预览" class="preview__img">
+          <button type="button" class="preview__remove" id="btnClear" title="清除图片">×</button>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="btnUpload" disabled>上传图像</button>
+          <button type="button" class="btn btn--accent" id="btnGrade" disabled>开始批改</button>
+        </div>
+
+        <!-- 流程进度 -->
+        <ol class="steps" id="stepsList" aria-label="批改进度">
+          <li class="step" data-step="upload"><span class="step__icon">1</span><span class="step__label">上传</span></li>
+          <li class="step" data-step="preprocess"><span class="step__icon">2</span><span class="step__label">预处理</span></li>
+          <li class="step" data-step="cut"><span class="step__icon">3</span><span class="step__label">切题</span></li>
+          <li class="step" data-step="ocr"><span class="step__icon">4</span><span class="step__label">识别</span></li>
+          <li class="step" data-step="grade"><span class="step__icon">5</span><span class="step__label">批改</span></li>
+        </ol>
+      </section>
+
+      <!-- 右侧：结果展示 -->
+      <section class="panel panel--result" aria-labelledby="result-heading">
+        <h2 id="result-heading" class="panel__title">批改结果</h2>
+
+        <div class="empty-state" id="emptyState">
+          <span class="empty-state__icon" aria-hidden="true">📋</span>
+          <p>上传作业并开始批改后，结果将显示在这里</p>
+        </div>
+
+        <div class="result-content" id="resultContent" hidden>
+          <!-- 切题可视化 -->
+          <div class="result-block">
+            <div class="result-block__head">
+              <h3>切题结果</h3>
+              <span class="badge" id="questionCount">0 道题</span>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="resultCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- 评分总览 -->
+          <div class="score-card" id="scoreCard">
+            <div class="score-card__main">
+              <span class="score-card__value" id="totalScore">—</span>
+              <span class="score-card__unit">分</span>
+            </div>
+            <div class="score-card__meta">
+              <span id="scoreDetail">满分 — 分</span>
+            </div>
+            <p class="score-card__comment" id="overallComment"></p>
+          </div>
+
+          <!-- 批注图 -->
+          <div class="result-block" id="annotatedBlock" hidden>
+            <h3>批注图像</h3>
+            <img id="annotatedImage" alt="批改批注图" class="annotated-img">
+          </div>
+
+          <!-- 逐题详情 -->
+          <div class="result-block">
+            <h3>题目详情</h3>
+            <ul class="question-list" id="questionList"></ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 加载遮罩 -->
+  <div class="overlay" id="loadingOverlay" hidden>
+    <div class="overlay__box">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="overlay__text" id="loadingText">处理中…</p>
+      <p class="overlay__sub" id="loadingSub"></p>
+    </div>
+  </div>
+
+  <!-- 消息提示 -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
