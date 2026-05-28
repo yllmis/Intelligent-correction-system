@@ -1,0 +1,7 @@
+detection_mode=segmentation
+segmentation_source=grabcut
+segmentation_fit_mode=forced_primary_component
+resize_scale=0.8333333333333334
+min_area=115200
+ordered_points=[[0.0, 90.0], [1078.800048828125, 145.1999969482422], [1078.800048828125, 1767.60009765625], [0.0, 1750.800048828125]]
+transform_matrix=[[1.0621789006690998, 0.0, 0.0], [-0.05114331037725833, 0.9995182750453978, -89.9566447540858], [-2.1432474742011898e-05, -0.0, 1.0]]
