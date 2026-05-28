@@ -7,6 +7,8 @@ Inputs:
 - inputs/1 (4).jpg
 - inputs/1 (5).jpg
 - inputs/1 (6).jpg
+- inputs/0a24e520ea08bd466f6b6abb0a2b2b42_720.jpg
+- inputs/79c829ceba9d51ba5f70808b56b60808_720.jpg
 
 Outputs:
 - outputs/1_1_final.jpg
@@ -15,6 +17,8 @@ Outputs:
 - outputs/1_4_final.jpg
 - outputs/1_5_final.jpg
 - outputs/1_6_final.jpg
+- outputs/0a24_final.jpg
+- outputs/79c8_final.jpg
 
 Debug overlays:
 - outputs/*_debug_corners.jpg
@@ -26,7 +30,9 @@ Step-by-step artifacts:
 - steps/1_4_steps/
 - steps/1_5_steps/
 - steps/1_6_steps/
+- steps/0a24_steps/
+- steps/79c8_steps/
 
 Observed result:
-- All six sample images completed successfully with auto:segmentation detection.
+- All eight sample images completed successfully with auto:segmentation detection.
 - The current implementation uses forced_primary_component fitting after paper segmentation to maximize usable perspective correction coverage on irregular page boundaries.
