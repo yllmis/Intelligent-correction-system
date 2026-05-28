@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 import cv2
 import numpy as np
@@ -13,6 +13,30 @@ A4_ASPECT_RATIO = 297 / 210
 
 class PerspectiveCorrectionError(ValueError):
     pass
+
+
+class DebugCollector:
+    def __init__(self, output_dir: str | Path | None = None):
+        self.output_dir = Path(output_dir) if output_dir is not None else None
+        self.data: dict[str, Any] = {}
+
+    def set(self, key: str, value: Any) -> None:
+        self.data[key] = value
+
+    def has_output_dir(self) -> bool:
+        return self.output_dir is not None
+
+    def save_image(self, name: str, image: np.ndarray) -> None:
+        if self.output_dir is None:
+            return
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(self.output_dir / name), image)
+
+    def save_text(self, name: str, text: str) -> None:
+        if self.output_dir is None:
+            return
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        (self.output_dir / name).write_text(text, encoding="utf-8")
 
 
 def parse_points(points: Sequence[Sequence[float]] | np.ndarray) -> np.ndarray:
@@ -124,6 +148,132 @@ def _normalize_mask(mask: np.ndarray) -> np.ndarray:
     return normalized
 
 
+def _largest_component(mask: np.ndarray, min_area: int) -> np.ndarray | None:
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    best_component: np.ndarray | None = None
+    best_area = 0
+
+    for label in range(1, num_labels):
+        area = int(stats[label, cv2.CC_STAT_AREA])
+        if area < min_area or area <= best_area:
+            continue
+
+        component = np.zeros_like(mask)
+        component[labels == label] = 255
+        best_component = component
+        best_area = area
+
+    return best_component
+
+
+
+def _segment_paper_mask(
+    image: np.ndarray,
+    min_area: int,
+    debug: DebugCollector | None = None,
+) -> np.ndarray | None:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    saturation = hsv[:, :, 1]
+    value = hsv[:, :, 2]
+
+    _, bright_mask = cv2.threshold(value, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    _, low_saturation = cv2.threshold(
+        saturation, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    )
+    white_likelihood = cv2.bitwise_and(bright_mask, low_saturation)
+    white_likelihood = _normalize_mask(white_likelihood)
+
+    if debug is not None:
+        debug.save_image("01_gray.png", gray)
+        debug.save_image("02_value_mask.png", bright_mask)
+        debug.save_image("03_low_saturation_mask.png", low_saturation)
+        debug.save_image("04_white_likelihood.png", white_likelihood)
+
+    foreground_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
+    foreground_seed = cv2.erode(white_likelihood, foreground_kernel, iterations=1)
+    if cv2.countNonZero(foreground_seed) == 0:
+        foreground_seed = white_likelihood.copy()
+
+    if debug is not None:
+        debug.save_image("05_foreground_seed.png", foreground_seed)
+
+    _, high_saturation = cv2.threshold(
+        saturation, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    )
+    _, dark_mask = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    background_seed = np.zeros_like(gray)
+    margin_y = max(10, image.shape[0] // 24)
+    margin_x = max(10, image.shape[1] // 24)
+    background_seed[:margin_y, :] = 255
+    background_seed[-margin_y:, :] = 255
+    background_seed[:, :margin_x] = 255
+    background_seed[:, -margin_x:] = 255
+    background_seed = cv2.bitwise_or(background_seed, high_saturation)
+    background_seed = cv2.bitwise_or(background_seed, dark_mask)
+    background_seed = cv2.bitwise_and(background_seed, cv2.bitwise_not(foreground_seed))
+
+    if debug is not None:
+        debug.save_image("06_high_saturation_mask.png", high_saturation)
+        debug.save_image("07_dark_mask.png", dark_mask)
+        debug.save_image("08_background_seed.png", background_seed)
+
+    grabcut_mask = np.full(gray.shape, cv2.GC_PR_BGD, dtype=np.uint8)
+    grabcut_mask[background_seed > 0] = cv2.GC_BGD
+    grabcut_mask[white_likelihood > 0] = cv2.GC_PR_FGD
+    grabcut_mask[foreground_seed > 0] = cv2.GC_FGD
+
+    if cv2.countNonZero(foreground_seed) == 0:
+        return None
+
+    bg_model = np.zeros((1, 65), np.float64)
+    fg_model = np.zeros((1, 65), np.float64)
+
+    has_background = np.any(grabcut_mask == cv2.GC_BGD) or np.any(grabcut_mask == cv2.GC_PR_BGD)
+    has_foreground = np.any(grabcut_mask == cv2.GC_FGD) or np.any(grabcut_mask == cv2.GC_PR_FGD)
+
+    if has_background and has_foreground:
+        try:
+            cv2.grabCut(image, grabcut_mask, None, bg_model, fg_model, 5, cv2.GC_INIT_WITH_MASK)
+            segmented = np.where(
+                (grabcut_mask == cv2.GC_FGD) | (grabcut_mask == cv2.GC_PR_FGD),
+                255,
+                0,
+            ).astype(np.uint8)
+            segmentation_source = "grabcut"
+        except cv2.error:
+            segmented = white_likelihood.copy()
+            segmentation_source = "white_likelihood_fallback"
+    else:
+        segmented = white_likelihood.copy()
+        segmentation_source = "white_likelihood_fallback"
+    segmented = _normalize_mask(segmented)
+
+    if debug is not None:
+        debug.set("segmentation_source", segmentation_source)
+        debug.save_image("09_segmented_mask_raw.png", segmented)
+    segmented = cv2.morphologyEx(
+        segmented,
+        cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17)),
+        iterations=2,
+    )
+
+    component = _largest_component(segmented, min_area)
+    if component is not None:
+        if debug is not None:
+            debug.save_image("10_segmented_largest_component.png", component)
+        return component
+
+    fallback_component = _largest_component(white_likelihood, min_area)
+    if debug is not None and fallback_component is not None:
+        debug.save_image("10_segmented_largest_component.png", fallback_component)
+    return fallback_component
+
+
+
 def _build_detection_masks(image: np.ndarray) -> list[tuple[str, np.ndarray]]:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -231,27 +381,56 @@ def _score_quad(
     return area_ratio * 2.5 + aspect_score * 1.8 + brightness_score * 0.8 + center_score * 0.6
 
 
-def auto_detect_paper_corners(
+def _detect_from_segmentation(
     image: np.ndarray,
     *,
-    expected_ratio: float = A4_ASPECT_RATIO,
-    min_area_ratio: float = 0.08,
-    max_side: int = 1600,
-) -> tuple[np.ndarray, np.ndarray, str]:
-    if image is None or image.size == 0:
-        raise PerspectiveCorrectionError("Input image is empty.")
+    expected_ratio: float,
+    min_area: int,
+    debug: DebugCollector | None = None,
+) -> tuple[np.ndarray, np.ndarray, str] | None:
+    segmented_mask = _segment_paper_mask(image, min_area, debug=debug)
+    if segmented_mask is None:
+        return None
 
-    resized, scale = _resize_for_detection(image, max_side=max_side)
-    gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    image_area = resized.shape[0] * resized.shape[1]
-    min_area = image_area * min_area_ratio
+    contours, _ = cv2.findContours(segmented_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
 
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    primary_contour = contours[0]
+    primary_area = cv2.contourArea(primary_contour)
+    if primary_area < min_area:
+        return None
+
+    primary_hull = cv2.convexHull(primary_contour)
+    forced_quad = _contour_to_quad(primary_hull)
+    if forced_quad is None:
+        return None
+
+    ordered = order_points(forced_quad)
+    if debug is not None:
+        debug.set("segmentation_points", ordered.tolist())
+        debug.set("segmentation_primary_area", float(primary_area))
+        debug.set("segmentation_fit_mode", "forced_primary_component")
+        debug.save_image("11_final_segmentation_mask.png", segmented_mask)
+        debug.save_image("12_detected_corners_overlay.png", draw_corners(image, ordered))
+    return ordered, segmented_mask, "segmentation"
+
+
+
+def _detect_from_candidate_quads(
+    image: np.ndarray,
+    *,
+    expected_ratio: float,
+    min_area: int,
+) -> tuple[np.ndarray, np.ndarray, str] | None:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     best_quad: np.ndarray | None = None
     best_mask: np.ndarray | None = None
     best_mask_name = ""
     best_score = float("-inf")
 
-    for mask_name, mask in _build_detection_masks(resized):
+    for mask_name, mask in _build_detection_masks(image):
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours:
             contour_area = cv2.contourArea(contour)
@@ -270,10 +449,55 @@ def auto_detect_paper_corners(
                 best_mask_name = mask_name
 
     if best_quad is None or best_mask is None:
-        raise PerspectiveCorrectionError("Automatic paper corner detection failed.")
+        return None
 
-    detected = order_points(best_quad / scale)
-    return detected, best_mask, best_mask_name
+    return order_points(best_quad), best_mask, best_mask_name
+
+
+
+def auto_detect_paper_corners(
+    image: np.ndarray,
+    *,
+    expected_ratio: float = A4_ASPECT_RATIO,
+    min_area_ratio: float = 0.08,
+    max_side: int = 1600,
+    debug: DebugCollector | None = None,
+) -> tuple[np.ndarray, np.ndarray, str]:
+    if image is None or image.size == 0:
+        raise PerspectiveCorrectionError("Input image is empty.")
+
+    resized, scale = _resize_for_detection(image, max_side=max_side)
+    image_area = resized.shape[0] * resized.shape[1]
+    min_area = int(image_area * min_area_ratio)
+
+    if debug is not None:
+        debug.set("resized_shape", list(resized.shape))
+        debug.set("resize_scale", scale)
+        debug.set("min_area", min_area)
+        debug.save_image("00_input_resized.png", resized)
+
+    segmentation_result = _detect_from_segmentation(
+        resized,
+        expected_ratio=expected_ratio,
+        min_area=min_area,
+        debug=debug,
+    )
+    if segmentation_result is not None:
+        points, mask, mask_name = segmentation_result
+        if debug is not None:
+            debug.set("detection_mode", mask_name)
+        return order_points(points / scale), mask, mask_name
+
+    quad_result = _detect_from_candidate_quads(
+        resized,
+        expected_ratio=expected_ratio,
+        min_area=min_area,
+    )
+    if quad_result is not None:
+        points, mask, mask_name = quad_result
+        return order_points(points / scale), mask, mask_name
+
+    raise PerspectiveCorrectionError("Automatic paper corner detection failed.")
 
 
 def correct_paper_perspective(
@@ -320,12 +544,14 @@ def auto_correct_paper_perspective(
     max_side: int = 1600,
     interpolation: int = cv2.INTER_CUBIC,
     border_mode: int = cv2.BORDER_REPLICATE,
+    debug: DebugCollector | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str]:
     detected_points, debug_mask, mask_name = auto_detect_paper_corners(
         image,
         expected_ratio=expected_ratio,
         min_area_ratio=min_area_ratio,
         max_side=max_side,
+        debug=debug,
     )
     corrected, matrix, ordered_points = correct_paper_perspective(
         image,
@@ -336,6 +562,24 @@ def auto_correct_paper_perspective(
         interpolation=interpolation,
         border_mode=border_mode,
     )
+    if debug is not None:
+        debug.set("ordered_points", ordered_points.tolist())
+        debug.set("transform_matrix", matrix.tolist())
+        debug.save_image("13_corrected_output.png", corrected)
+        debug.save_text(
+            "14_summary.txt",
+            "\n".join(
+                [
+                    f"detection_mode={debug.data.get('detection_mode', mask_name)}",
+                    f"segmentation_source={debug.data.get('segmentation_source', 'unknown')}",
+                    f"segmentation_fit_mode={debug.data.get('segmentation_fit_mode', 'unknown')}",
+                    f"resize_scale={debug.data.get('resize_scale', 'unknown')}",
+                    f"min_area={debug.data.get('min_area', 'unknown')}",
+                    f"ordered_points={ordered_points.tolist()}",
+                    f"transform_matrix={matrix.tolist()}",
+                ]
+            ),
+        )
     return corrected, matrix, ordered_points, debug_mask, mask_name
 
 
@@ -421,6 +665,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional path to save the binary mask used by automatic paper detection.",
     )
+    parser.add_argument(
+        "--debug-dir",
+        default=None,
+        help="Optional directory to save step-by-step intermediate outputs.",
+    )
     return parser
 
 
@@ -433,6 +682,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         raise SystemExit(f"Failed to read input image: {args.input}")
 
     aspect_ratio = A4_ASPECT_RATIO if args.a4 else args.aspect_ratio
+    debug = DebugCollector(args.debug_dir)
 
     if args.points is None:
         corrected, matrix, ordered_points, debug_mask, mask_name = auto_correct_paper_perspective(
@@ -442,6 +692,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             output_height=args.height,
             expected_ratio=A4_ASPECT_RATIO,
             min_area_ratio=args.min_area_ratio,
+            debug=debug,
         )
         detection_mode = f"auto:{mask_name}"
     else:
