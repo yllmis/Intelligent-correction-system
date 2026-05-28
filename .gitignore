@@ -40,7 +40,4 @@ uploads/*
 .coverage
 htmlcov/
 
-# 大模型/OCR 测试样本图像（可能含敏感内容）
-tests/paper_samples/*.jpg
-tests/paper_samples/*.png
 !tests/paper_samples/.gitkeep
