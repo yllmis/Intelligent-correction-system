@@ -1,0 +1,33 @@
+{
+  "headers": {
+    "date": "Thu, 28 May 2026 08:53:11 GMT",
+    "content-type": "application/json;charset=utf-8",
+    "content-length": "272",
+    "connection": "keep-alive",
+    "keep-alive": "timeout=25",
+    "access-control-allow-origin": "*",
+    "access-control-expose-headers": "*",
+    "x-acs-request-id": "A128A3E5-3AA0-594B-ACE0-D74F6EBB963D",
+    "x-acs-trace-id": "81cf0ccac43e96658cf97a028d47cb0c",
+    "etag": "2yfsSmZxP2NtFX38pZelt8g2"
+  },
+  "statusCode": 200,
+  "body": {
+    "Data": {
+      "algo_version": "2ca123f830dad3b81e147de7213b2e49afd8cd2f",
+      "page_list": [
+        {
+          "angle": 1,
+          "doc_index": 1,
+          "height": 1569,
+          "orgHeight": 1277,
+          "orgWidth": 903,
+          "page_id": 0,
+          "subject_list": [],
+          "width": 1097
+        }
+      ]
+    },
+    "RequestId": "A128A3E5-3AA0-594B-ACE0-D74F6EBB963D"
+  }
+}

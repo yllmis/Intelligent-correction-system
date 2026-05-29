@@ -20,6 +20,8 @@ DEFAULT_ENDPOINT = "ocr-api.cn-hangzhou.aliyuncs.com"
 DEFAULT_SUBJECT = "Math"
 DEFAULT_CUT_TYPE = "question"
 DEFAULT_IMAGE_TYPE = "scan"
+DEFAULT_ACCESS_KEY_ID = None
+DEFAULT_ACCESS_KEY_SECRET = None
 
 
 class PaperCutError(RuntimeError):
@@ -32,8 +34,8 @@ def create_client(
     access_key_id: str | None = None,
     access_key_secret: str | None = None,
 ) -> OcrClient:
-    resolved_access_key_id = access_key_id or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
-    resolved_access_key_secret = access_key_secret or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+    resolved_access_key_id = access_key_id or DEFAULT_ACCESS_KEY_ID or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+    resolved_access_key_secret = access_key_secret or DEFAULT_ACCESS_KEY_SECRET or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
 
     if resolved_access_key_id and resolved_access_key_secret:
         config = open_api_models.Config(
@@ -243,12 +245,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--access-key-id",
         default=None,
-        help="Aliyun access key id. Defaults to ALIBABA_CLOUD_ACCESS_KEY_ID when omitted.",
+        help="Aliyun access key id. Defaults to the built-in key when omitted.",
     )
     parser.add_argument(
         "--access-key-secret",
         default=None,
-        help="Aliyun access key secret. Defaults to ALIBABA_CLOUD_ACCESS_KEY_SECRET when omitted.",
+        help="Aliyun access key secret. Defaults to the built-in secret when omitted.",
     )
     return parser
 
