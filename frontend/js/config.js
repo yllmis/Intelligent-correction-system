@@ -3,10 +3,10 @@
  */
 const AppConfig = {
   /** Flask 后端地址，开发时可为 http://127.0.0.1:5000 */
-  API_BASE: 'http://127.0.0.1:5000',
+  API_BASE: 'http://127.0.0.1:5001',
 
   /** 为 true 时后端不可用时使用本地模拟数据（便于纯前端调试） */
-  MOCK_MODE: true,
+  MOCK_MODE: false,
 
   /** 请求超时（毫秒），与需求文档 15 秒总体响应建议一致 */
   REQUEST_TIMEOUT: 60000,
