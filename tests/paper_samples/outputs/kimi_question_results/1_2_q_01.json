@@ -1,0 +1,14 @@
+{
+  "question_text": "1. 25×4=  3. 125×8=  5. 36×2=",
+  "student_answer": "1. 100  3. 1000  5. 72",
+  "correct_answer": "1. 100  3. 1000  5. 72",
+  "is_correct": true,
+  "explanation": "三道口算题全部计算正确。25×4=100，125×8=1000，36×2=72，结果均无误。",
+  "mistake_analysis": "无",
+  "knowledge_points": [
+    "整数乘法",
+    "口算乘法",
+    "简便运算"
+  ],
+  "confidence": 0.98
+}
