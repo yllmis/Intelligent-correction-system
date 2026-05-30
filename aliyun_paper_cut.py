@@ -137,25 +137,27 @@ def _iter_content_regions(result: dict[str, Any]) -> Iterable[tuple[str, list[tu
     for page in page_list:
         if not isinstance(page, dict):
             continue
-        subject_list = page.get("subject_list")
-        if not isinstance(subject_list, list):
-            continue
 
-        for subject in subject_list:
-            if not isinstance(subject, dict):
-                continue
-            ids = subject.get("ids")
-            label = "-".join(str(item) for item in ids) if isinstance(ids, list) and ids else "?"
-            content_list = subject.get("content_list_info")
-            if not isinstance(content_list, list):
+        for list_key in ("subject_list", "answer_list"):
+            region_list = page.get(list_key)
+            if not isinstance(region_list, list):
                 continue
 
-            for content in content_list:
-                if not isinstance(content, dict):
+            for region in region_list:
+                if not isinstance(region, dict):
                     continue
-                points = _to_point_list(content.get("pos"))
-                if points:
-                    yield label, points
+                ids = region.get("ids")
+                label = "-".join(str(item) for item in ids) if isinstance(ids, list) and ids else "?"
+                content_list = region.get("content_list_info")
+                if not isinstance(content_list, list):
+                    continue
+
+                for content in content_list:
+                    if not isinstance(content, dict):
+                        continue
+                    points = _to_point_list(content.get("pos"))
+                    if points:
+                        yield label, points
 
 
 def _to_point_list(raw: Any) -> list[tuple[int, int]]:

@@ -1,0 +1,6 @@
+{
+  "input": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\enhanced_document\\1_5_final_white_bg_black_text.jpg",
+  "style": "printed",
+  "reason": "页面主体为规则排版的印刷试卷题目，包含印刷题干、题号和选项，手写内容仅为填空和选择的作答笔迹。",
+  "mode": "aliyun"
+}

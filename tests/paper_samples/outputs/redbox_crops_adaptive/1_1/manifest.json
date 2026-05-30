@@ -1,0 +1,35 @@
+{
+  "question_count": 3,
+  "questions": [
+    {
+      "index": 1,
+      "bbox": [
+        164,
+        152,
+        1557,
+        904
+      ],
+      "path": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\redbox_crops_adaptive\\1_1\\q_01.png"
+    },
+    {
+      "index": 2,
+      "bbox": [
+        208,
+        1001,
+        1557,
+        1542
+      ],
+      "path": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\redbox_crops_adaptive\\1_1\\q_02.png"
+    },
+    {
+      "index": 3,
+      "bbox": [
+        218,
+        1578,
+        1557,
+        2365
+      ],
+      "path": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\redbox_crops_adaptive\\1_1\\q_03.png"
+    }
+  ]
+}
