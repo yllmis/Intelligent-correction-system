@@ -1,0 +1,25 @@
+{
+  "question_count": 2,
+  "questions": [
+    {
+      "index": 1,
+      "bbox": [
+        194,
+        144,
+        1619,
+        1548
+      ],
+      "path": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\redbox_crops_adaptive\\1_3\\q_01.png"
+    },
+    {
+      "index": 2,
+      "bbox": [
+        194,
+        1569,
+        1614,
+        2396
+      ],
+      "path": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\redbox_crops_adaptive\\1_3\\q_02.png"
+    }
+  ]
+}

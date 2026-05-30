@@ -20,6 +20,8 @@ DEFAULT_ENDPOINT = "ocr-api.cn-hangzhou.aliyuncs.com"
 DEFAULT_SUBJECT = "Math"
 DEFAULT_CUT_TYPE = "question"
 DEFAULT_IMAGE_TYPE = "scan"
+DEFAULT_ACCESS_KEY_ID = None
+DEFAULT_ACCESS_KEY_SECRET = None
 
 
 class PaperCutError(RuntimeError):
@@ -32,8 +34,8 @@ def create_client(
     access_key_id: str | None = None,
     access_key_secret: str | None = None,
 ) -> OcrClient:
-    resolved_access_key_id = access_key_id or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
-    resolved_access_key_secret = access_key_secret or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+    resolved_access_key_id = access_key_id or DEFAULT_ACCESS_KEY_ID or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+    resolved_access_key_secret = access_key_secret or DEFAULT_ACCESS_KEY_SECRET or os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
 
     if resolved_access_key_id and resolved_access_key_secret:
         config = open_api_models.Config(
@@ -135,25 +137,27 @@ def _iter_content_regions(result: dict[str, Any]) -> Iterable[tuple[str, list[tu
     for page in page_list:
         if not isinstance(page, dict):
             continue
-        subject_list = page.get("subject_list")
-        if not isinstance(subject_list, list):
-            continue
 
-        for subject in subject_list:
-            if not isinstance(subject, dict):
-                continue
-            ids = subject.get("ids")
-            label = "-".join(str(item) for item in ids) if isinstance(ids, list) and ids else "?"
-            content_list = subject.get("content_list_info")
-            if not isinstance(content_list, list):
+        for list_key in ("subject_list", "answer_list"):
+            region_list = page.get(list_key)
+            if not isinstance(region_list, list):
                 continue
 
-            for content in content_list:
-                if not isinstance(content, dict):
+            for region in region_list:
+                if not isinstance(region, dict):
                     continue
-                points = _to_point_list(content.get("pos"))
-                if points:
-                    yield label, points
+                ids = region.get("ids")
+                label = "-".join(str(item) for item in ids) if isinstance(ids, list) and ids else "?"
+                content_list = region.get("content_list_info")
+                if not isinstance(content_list, list):
+                    continue
+
+                for content in content_list:
+                    if not isinstance(content, dict):
+                        continue
+                    points = _to_point_list(content.get("pos"))
+                    if points:
+                        yield label, points
 
 
 def _to_point_list(raw: Any) -> list[tuple[int, int]]:
@@ -243,12 +247,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--access-key-id",
         default=None,
-        help="Aliyun access key id. Defaults to ALIBABA_CLOUD_ACCESS_KEY_ID when omitted.",
+        help="Aliyun access key id. Defaults to the built-in key when omitted.",
     )
     parser.add_argument(
         "--access-key-secret",
         default=None,
-        help="Aliyun access key secret. Defaults to ALIBABA_CLOUD_ACCESS_KEY_SECRET when omitted.",
+        help="Aliyun access key secret. Defaults to the built-in secret when omitted.",
     )
     return parser
 

@@ -1,0 +1,6 @@
+{
+  "input": "d:\\C_data\\Intelligent-correction-system\\tests\\paper_samples\\outputs\\enhanced_document\\1_3_final_white_bg_black_text.jpg",
+  "style": "handwriting",
+  "reason": "整页所有题目、选项及作答痕迹均为手写，无印刷文字和规则排版痕迹。",
+  "mode": "seedream"
+}

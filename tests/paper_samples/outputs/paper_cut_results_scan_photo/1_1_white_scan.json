@@ -1,0 +1,220 @@
+{
+  "headers": {
+    "date": "Thu, 28 May 2026 08:52:18 GMT",
+    "content-type": "application/json;charset=utf-8",
+    "content-length": "1722",
+    "connection": "keep-alive",
+    "keep-alive": "timeout=25",
+    "access-control-allow-origin": "*",
+    "access-control-expose-headers": "*",
+    "x-acs-request-id": "81B1986F-E1AB-509D-ABFD-9BD9943A575C",
+    "x-acs-trace-id": "467cd849cba21608eaf572375038c1a9",
+    "etag": "1x3aiVIH0dGbrfcWS2maPPg6"
+  },
+  "statusCode": 200,
+  "body": {
+    "Data": {
+      "algo_version": "2ca123f830dad3b81e147de7213b2e49afd8cd2f",
+      "page_list": [
+        {
+          "angle": 1,
+          "doc_index": 1,
+          "height": 3257,
+          "orgHeight": 3418,
+          "orgWidth": 2417,
+          "page_id": 0,
+          "subject_list": [
+            {
+              "content_list_info": [
+                {
+                  "doc_index": 1,
+                  "pos": [
+                    {
+                      "x": 239,
+                      "y": 146
+                    },
+                    {
+                      "x": 2249,
+                      "y": 162
+                    },
+                    {
+                      "x": 2189,
+                      "y": 1419
+                    },
+                    {
+                      "x": 270,
+                      "y": 1408
+                    }
+                  ]
+                }
+              ],
+              "ids": [
+                "254"
+              ],
+              "is_multipage": false,
+              "prism_wordsInfo": [
+                {
+                  "pos": [
+                    {
+                      "x": 254,
+                      "y": 241
+                    },
+                    {
+                      "x": 1992,
+                      "y": 280
+                    },
+                    {
+                      "x": 1988,
+                      "y": 406
+                    },
+                    {
+                      "x": 255,
+                      "y": 365
+                    }
+                  ],
+                  "recClassify": 0,
+                  "word": "-块灾，、铝块用托盘天千得其顶量为254k"
+                },
+                {
+                  "pos": [
+                    {
+                      "x": 263,
+                      "y": 371
+                    },
+                    {
+                      "x": 2086,
+                      "y": 401
+                    },
+                    {
+                      "x": 2080,
+                      "y": 521
+                    },
+                    {
+                      "x": 265,
+                      "y": 492
+                    }
+                  ],
+                  "recClassify": 0,
+                  "word": "熊测量围是5N的弹萄测力计测量"
+                },
+                {
+                  "pos": [
+                    {
+                      "x": 2059,
+                      "y": 374
+                    },
+                    {
+                      "x": 2169,
+                      "y": 375
+                    },
+                    {
+                      "x": 2163,
+                      "y": 494
+                    },
+                    {
+                      "x": 2054,
+                      "y": 493
+                    }
+                  ],
+                  "recClassify": 0,
+                  "word": "块"
+                },
+                {
+                  "pos": [
+                    {
+                      "x": 261,
+                      "y": 485
+                    },
+                    {
+                      "x": 600,
+                      "y": 510
+                    },
+                    {
+                      "x": 594,
+                      "y": 599
+                    },
+                    {
+                      "x": 259,
+                      "y": 573
+                    }
+                  ],
+                  "recClassify": 0,
+                  "word": "力大小."
+                },
+                {
+                  "pos": [
+                    {
+                      "x": 250,
+                      "y": 592
+                    },
+                    {
+                      "x": 393,
+                      "y": 593
+                    },
+                    {
+                      "x": 396,
+                      "y": 741
+                    },
+                    {
+                      "x": 253,
+                      "y": 739
+                    }
+                  ],
+                  "recClassify": 2,
+                  "word": "解：7"
+                },
+                {
+                  "pos": [
+                    {
+                      "x": 394,
+                      "y": 620
+                    },
+                    {
+                      "x": 927,
+                      "y": 635
+                    },
+                    {
+                      "x": 924,
+                      "y": 741
+                    },
+                    {
+                      "x": 395,
+                      "y": 726
+                    }
+                  ],
+                  "recClassify": 0,
+                  "word": "能，理由吓"
+                },
+                {
+                  "pos": [
+                    {
+                      "x": 469,
+                      "y": 1139
+                    },
+                    {
+                      "x": 1094,
+                      "y": 1138
+                    },
+                    {
+                      "x": 1093,
+                      "y": 1235
+                    },
+                    {
+                      "x": 471,
+                      "y": 1235
+                    }
+                  ],
+                  "recClassify": 0,
+                  "word": "量块重力"
+                }
+              ],
+              "text": "-块灾，、铝块用托盘天千得其顶量为254k 熊测量围是5N的弹萄测力计测量 块 力大小. 解：7 能，理由吓 量块重力 "
+            }
+          ],
+          "width": 2163
+        }
+      ]
+    },
+    "RequestId": "81B1986F-E1AB-509D-ABFD-9BD9943A575C"
+  }
+}

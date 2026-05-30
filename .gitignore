@@ -41,3 +41,6 @@ uploads/*
 htmlcov/
 
 !tests/paper_samples/.gitkeep
+
+# SeedDream 临时签名 URL
+*_seedream_url.txt
